@@ -96,6 +96,15 @@ const Panels = (() => {
     return s.length > n ? s.slice(0, n - 1) + '…' : s;
   }
 
+  // xóa sạch dữ liệu đã tích lũy (khi chuyển giữa LIVE <-> DEMO để không trộn data giả với thật)
+  function clear() {
+    contributors.clear();
+    recent = [];
+    totalRoses = 0;
+    totalPeople.clear();
+    dirty = true;
+  }
+
   function init(config) {
     if (config) {
       titles.leaderboard = config.leaderboardTitle || titles.leaderboard;
@@ -172,5 +181,5 @@ const Panels = (() => {
     dirty = true;
   }
 
-  return { init, record, applyConfig };
+  return { init, record, applyConfig, clear };
 })();

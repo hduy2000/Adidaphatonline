@@ -73,6 +73,7 @@
   // ---------------------------------------------------------- websocket
   let ws = null;
   let reconnectDelay = 1000;
+  let lastMode = null;
 
   function connect() {
     const proto = location.protocol === 'https:' ? 'wss' : 'ws';
@@ -87,7 +88,17 @@
         applyConfig(msg.config);
         return;
       }
-      if (msg.t === 'status') return;   // trang cảnh không cần status
+      if (msg.t === 'status') {
+        // chuyển LIVE <-> DEMO <-> idle: xóa data cũ để không trộn dữ liệu giả với thật
+        const m = msg.mode || 'idle';
+        if (m !== lastMode) {
+          if (m === 'live' || m === 'demo') Panels.clear();
+          lastMode = m;
+        }
+        const badge = document.getElementById('demo-badge');
+        if (badge) badge.style.display = (m === 'demo') ? 'flex' : 'none';
+        return;
+      }
       handleEvent(msg);
     };
 

@@ -302,6 +302,7 @@
 (() => {
   const $ = (id) => document.getElementById(id);
   let ws = null;
+  let lastMode2 = null;
 
   /* ---------------- trạng thái + log ---------------- */
   function setStatus(kind, text) {
@@ -332,6 +333,19 @@
       let msg;
       try { msg = JSON.parse(ev.data); } catch { return; }
       if (msg.t === 'status') {
+        // đổi phiên (LIVE <-> DEMO <-> dừng): dọn log, ghi dòng đánh dấu phân cách
+        const m = msg.mode || 'idle';
+        if (m !== lastMode2) {
+          lastMode2 = m;
+          const el = $('log');
+          el.innerHTML = '';
+          const div = document.createElement('div');
+          div.className = 's';
+          div.textContent = m === 'live' ? `—— LIVE @${msg.username} ——`
+            : m === 'demo' ? '—— CHẾ ĐỘ DEMO (dữ liệu giả) ——'
+            : '—— Đã dừng ——';
+          el.appendChild(div);
+        }
         if (msg.mode === 'live') setStatus('on', `🟢 LIVE: @${msg.username}${msg.viewers ? ' — ' + msg.viewers + ' người xem' : ''}${msg.msg ? ' — ' + msg.msg : ''}`);
         else if (msg.mode === 'demo') setStatus('demo', `🧪 DEMO đang chạy${msg.msg ? ' — ' + msg.msg : ''}`);
         else setStatus('idle', msg.msg || 'Server sẵn sàng.');
