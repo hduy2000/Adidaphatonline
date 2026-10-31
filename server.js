@@ -263,12 +263,14 @@ function buildLiveOptions() {
   if (key) options.signApiKey = key;
   const sid = String(config.sessionid || '').trim();
   if (sid) {
+    // có phiên đăng nhập -> dùng WebSocket xác thực (đường ký riêng, bớt phụ thuộc endpoint trả phí)
     options.session = {
       cookie: {
         sessionId: sid,
         ttTargetIdc: String(config.ttTargetIdc || 'useast2a').trim()
       }
     };
+    options.authenticateWs = true;
   }
   return options;
 }
@@ -338,12 +340,12 @@ async function startLive(username) {
   const RETRYABLE = /business plan|failed to sign|sign a request|rate.?limit|429|timeout|econn|socket hang up/i;
   let lastErr = null;
 
-  for (let attempt = 1; attempt <= 3; attempt++) {
+  for (let attempt = 1; attempt <= 5; attempt++) {
     const conn = new TikTokLiveConnection(uniqueId, options);
     attachLiveHandlers(conn);
     connection = conn;
     try {
-      console.log(`[tiktok] Đang kết nối tới @${uniqueId} (lần ${attempt}/3)...`);
+      console.log(`[tiktok] Đang kết nối tới @${uniqueId} (lần ${attempt}/5)...`);
       await conn.connect();
       lastViewers = 0;
       console.log(`[tiktok] Đã kết nối tới @${uniqueId}`);
@@ -354,9 +356,9 @@ async function startLive(username) {
       lastErr = err;
       console.error(`[tiktok] Lần ${attempt} lỗi:`, err.message);
       connection = null;
-      if (attempt < 3 && RETRYABLE.test(err.message)) {
-        sendStatus(`Ký request bị chặn tạm thời (lần ${attempt}/3) — tự thử lại sau ${attempt * 4} giây...`);
-        await new Promise(r => setTimeout(r, attempt * 4000));
+      if (attempt < 5 && RETRYABLE.test(err.message)) {
+        sendStatus(`Ký request bị chặn tạm thời (lần ${attempt}/5) — tự thử lại sau ${attempt * 5} giây...`);
+        await new Promise(r => setTimeout(r, attempt * 5000));
       } else {
         break;
       }
@@ -370,12 +372,15 @@ async function startLive(username) {
 
   let friendly = 'Không kết nối được livestream: ' + raw;
   if (lastErr && /business plan/i.test(raw)) {
-    friendly = 'Lỗi Euler Stream (endpoint ký request bị giới hạn ở gói free). Cách xử lý: '
-      + '(1) Bấm Kết nối lại vài lần — lỗi này đôi khi chỉ là quá tải tạm thời. '
-      + '(2) Đăng ký API key MIỄN PHÍ tại eulerstream.com → Dashboard → API Keys, dán vào ô "Euler API Key" ở trang cài đặt, bấm Lưu rồi kết nối lại — key free đủ dùng cho 1 livestream. '
-      + '(3) Nếu vẫn lặp lại: thêm sessionid TikTok vào cài đặt, hoặc cân nhắc gói trả phí của Euler Stream.';
+    friendly = 'Lỗi Euler Stream (endpoint ký request bị giới hạn ở gói free). Cách xử lý theo thứ tự: '
+      + '(1) Đăng ký API key MIỄN PHÍ tại eulerstream.com → Dashboard → API Keys → Create API key, dán vào ô "Euler API Key" ở trang cài đặt, bấm Lưu rồi kết nối lại — đây là cách fix hiệu quả nhất, key free đủ dùng cho 1 livestream. '
+      + '(2) Thêm sessionid TikTok vào cài đặt (F12 → Cookies trên tiktok.com) — sẽ chuyển sang WebSocket xác thực, ít phụ thuộc endpoint quá tải. '
+      + '(3) Bấm Kết nối lại nhiều lần — lỗi có lúc qua lúc không. '
+      + '(4) Live thường xuyên/quy mô lớn thì cần gói trả phí của Euler Stream.';
   } else if (lastErr && /isn't online|not.*live/i.test(raw)) {
     friendly = 'Người này hiện KHÔNG đang phát trực tiếp. Hãy chờ họ lên sóng rồi bấm Kết nối lại.';
+  } else if (lastErr && /status code 403/i.test(raw)) {
+    friendly = 'TikTok chặn request (403). Hãy thêm sessionid TikTok vào cài đặt (F12 → Cookies trên tiktok.com → copy sessionid) rồi thử lại.';
   }
   throw new Error(friendly);
 }
