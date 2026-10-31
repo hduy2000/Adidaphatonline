@@ -17,6 +17,8 @@ const DEFAULT_CONFIG = {
   port: 3000,
   username: '',                 // @username mặc định của người đang live
   sessionid: '',                // (dự phòng) cookie sessionid khi đăng nhập tiktok.com
+  ttTargetIdc: 'useast2a',      // data center TikTok đi kèm sessionid (xem cookie tt-target-idc)
+  eulerApiKey: '',              // API key miễn phí tại eulerstream.com — nâng hạn mức ký request
   background: '',               // tên file ảnh nền trong public/image/ — rỗng = cảnh vẽ code
   maxMonks: 20,                 // số bồ đoàn/phật tử tối đa trên màn hình
   bubbleSeconds: 5,             // thời gian hiện bubble bình luận (giây)
@@ -55,9 +57,13 @@ function saveConfigToDisk() {
   }
 }
 
-// config trả ra client — ẩn sessionid
+// config trả ra client — ẩn các key nhạy cảm
 function publicConfig() {
-  return { ...config, sessionid: config.sessionid ? '********' : '' };
+  return {
+    ...config,
+    sessionid: config.sessionid ? '********' : '',
+    eulerApiKey: config.eulerApiKey ? '********' : ''
+  };
 }
 
 // cập nhật config từ form cài đặt + lưu + phát tới mọi client
@@ -67,6 +73,11 @@ function applyConfigPatch(p) {
     const s = String(p.sessionid).trim();
     if (s !== '********') config.sessionid = s.slice(0, 200);
   }
+  if (p.eulerApiKey !== undefined) {
+    const k = String(p.eulerApiKey).trim();
+    if (k !== '********') config.eulerApiKey = k.slice(0, 200);
+  }
+  if (p.ttTargetIdc !== undefined) config.ttTargetIdc = String(p.ttTargetIdc).trim().slice(0, 40) || 'useast2a';
   if (p.background !== undefined) {
     // chỉ nhận tên file nằm trong public/image/
     const name = String(p.background).trim().slice(0, 200);
@@ -151,10 +162,12 @@ const server = http.createServer((req, res) => {
 
   // ---- danh sách ảnh nền có trong public/image/ ----
   if (urlPath === '/api/backgrounds' && req.method === 'GET') {
+    // các file sprite nhân vật/bồ đoàn không phải ảnh nền -> loại ra
+    const SPRITE_FILES = new Set(['walk.png', 'walk-2.png', 'sit.png', 'sit-gift.png', 'cushion.png']);
     try {
       const dir = path.join(PUBLIC_DIR, 'image');
       const files = fs.readdirSync(dir)
-        .filter(f => /\.(png|jpe?g|webp|gif)$/i.test(f))
+        .filter(f => /\.(png|jpe?g|webp|gif)$/i.test(f) && !SPRITE_FILES.has(f))
         .map(f => ({ file: f, url: '/image/' + encodeURIComponent(f) }));
       sendJson(res, 200, files);
     } catch {
@@ -241,25 +254,32 @@ function userOut(u) {
 }
 
 // ---------------------------------------------------------------- TikTok Live
-async function startLive(username) {
-  stopAll(false);
-
-  let uniqueId = String(username || config.username || '').trim().replace(/^@/, '');
-  if (!uniqueId) throw new Error('Chưa nhập username TikTok');
-
+// Dựng options theo chuẩn tiktok-live-connector v2.5:
+//   signApiKey: Euler Stream API key (miễn phí) — nâng hạn mức ký request
+//   session.cookie.sessionId + ttTargetIdc: phiên đăng nhập (dự phòng khi bị chặn)
+function buildLiveOptions() {
   const options = { enableExtendedGiftInfo: true };
-  if (config.sessionid) options.auth = { sessionid: config.sessionid };
+  const key = String(config.eulerApiKey || '').trim();
+  if (key) options.signApiKey = key;
+  const sid = String(config.sessionid || '').trim();
+  if (sid) {
+    options.session = {
+      cookie: {
+        sessionId: sid,
+        ttTargetIdc: String(config.ttTargetIdc || 'useast2a').trim()
+      }
+    };
+  }
+  return options;
+}
 
-  connection = new TikTokLiveConnection(uniqueId, options);
-  currentUsername = uniqueId;
-  mode = 'live';
-
-  connection.on(WebcastEvent.CHAT, (msg) => {
+function attachLiveHandlers(conn) {
+  conn.on(WebcastEvent.CHAT, (msg) => {
     const user = userOut(msg.user);
     if (user && msg.comment) broadcast({ t: 'comment', user, text: String(msg.comment) });
   });
 
-  connection.on(WebcastEvent.GIFT, (msg) => {
+  conn.on(WebcastEvent.GIFT, (msg) => {
     const user = userOut(msg.user);
     if (!user) return;
     // gift streak (giftType=1): chỉ tính khi kết thúc chuỗi tặng
@@ -271,52 +291,93 @@ async function startLive(username) {
     broadcast({ t: 'gift', user, name, count, diamonds });
   });
 
-  connection.on(WebcastEvent.LIKE, (msg) => {
+  conn.on(WebcastEvent.LIKE, (msg) => {
     const user = userOut(msg.user);
     const count = Math.min(Math.max(1, msg.likeCount || 1), 30);
     if (user) broadcast({ t: 'like', user, count });
   });
 
-  connection.on(WebcastEvent.MEMBER, (msg) => {
+  conn.on(WebcastEvent.MEMBER, (msg) => {
     const user = userOut(msg.user);
     if (user) broadcast({ t: 'join', user });
   });
 
-  connection.on(WebcastEvent.FOLLOW, (msg) => {
+  conn.on(WebcastEvent.FOLLOW, (msg) => {
     const user = userOut(msg.user);
     if (user) broadcast({ t: 'follow', user });
   });
 
-  connection.on(WebcastEvent.ROOM_USER, (msg) => {
+  conn.on(WebcastEvent.ROOM_USER, (msg) => {
     if (typeof msg.total === 'number') lastViewers = msg.total;
   });
 
-  connection.on(WebcastEvent.STREAM_END, () => {
+  conn.on(WebcastEvent.STREAM_END, () => {
     sendStatus('Livestream đã kết thúc.');
     stopAll();
   });
 
-  connection.on('disconnected', () => {
+  conn.on('disconnected', () => {
     if (mode === 'live') {
       sendStatus('Mất kết nối với TikTok.');
       stopAll();
     }
   });
+}
 
-  try {
-    console.log(`[tiktok] Đang kết nối tới @${uniqueId} ...`);
-    await connection.connect();
-    console.log(`[tiktok] Đã kết nối tới @${uniqueId}`);
-    sendStatus(`Đã kết nối tới @${uniqueId}`);
-    ensureHeartbeat();
-  } catch (err) {
-    connection = null;
-    mode = 'idle';
-    currentUsername = '';
-    console.error('[tiktok] Lỗi kết nối:', err.message);
-    sendStatus('Không kết nối được livestream: ' + err.message);
-    throw err;
+async function startLive(username) {
+  stopAll(false);
+
+  let uniqueId = String(username || config.username || '').trim().replace(/^@/, '');
+  if (!uniqueId) throw new Error('Chưa nhập username TikTok');
+
+  currentUsername = uniqueId;
+  mode = 'live';
+  const options = buildLiveOptions();
+
+  // Lỗi ký request của Euler Stream thường là quá tải tạm thời ở gói free -> tự thử lại
+  const RETRYABLE = /business plan|failed to sign|sign a request|rate.?limit|429|timeout|econn|socket hang up/i;
+  let lastErr = null;
+
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    const conn = new TikTokLiveConnection(uniqueId, options);
+    attachLiveHandlers(conn);
+    connection = conn;
+    try {
+      console.log(`[tiktok] Đang kết nối tới @${uniqueId} (lần ${attempt}/3)...`);
+      await conn.connect();
+      lastViewers = 0;
+      console.log(`[tiktok] Đã kết nối tới @${uniqueId}`);
+      sendStatus(`Đã kết nối tới @${uniqueId}`);
+      ensureHeartbeat();
+      return;
+    } catch (err) {
+      lastErr = err;
+      console.error(`[tiktok] Lần ${attempt} lỗi:`, err.message);
+      connection = null;
+      if (attempt < 3 && RETRYABLE.test(err.message)) {
+        sendStatus(`Ký request bị chặn tạm thời (lần ${attempt}/3) — tự thử lại sau ${attempt * 4} giây...`);
+        await new Promise(r => setTimeout(r, attempt * 4000));
+      } else {
+        break;
+      }
+    }
   }
+
+  mode = 'idle';
+  currentUsername = '';
+  const raw = lastErr?.message || 'không rõ nguyên nhân';
+  console.error('[tiktok] Kết nối thất bại:', raw);
+
+  let friendly = 'Không kết nối được livestream: ' + raw;
+  if (lastErr && /business plan/i.test(raw)) {
+    friendly = 'Lỗi Euler Stream (endpoint ký request bị giới hạn ở gói free). Cách xử lý: '
+      + '(1) Bấm Kết nối lại vài lần — lỗi này đôi khi chỉ là quá tải tạm thời. '
+      + '(2) Đăng ký API key MIỄN PHÍ tại eulerstream.com → Dashboard → API Keys, dán vào ô "Euler API Key" ở trang cài đặt, bấm Lưu rồi kết nối lại — key free đủ dùng cho 1 livestream. '
+      + '(3) Nếu vẫn lặp lại: thêm sessionid TikTok vào cài đặt, hoặc cân nhắc gói trả phí của Euler Stream.';
+  } else if (lastErr && /isn't online|not.*live/i.test(raw)) {
+    friendly = 'Người này hiện KHÔNG đang phát trực tiếp. Hãy chờ họ lên sóng rồi bấm Kết nối lại.';
+  }
+  throw new Error(friendly);
 }
 
 // ---------------------------------------------------------------- Demo

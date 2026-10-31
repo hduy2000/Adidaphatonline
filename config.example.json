@@ -15,5 +15,7 @@
   "demoSpeed": 1,
   "demoGift": true,
   "demoLike": true,
-  "demoJoin": true
+  "demoJoin": true,
+  "eulerApiKey": "",
+  "ttTargetIdc": "useast2a"
 }

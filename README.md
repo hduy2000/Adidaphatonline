@@ -51,16 +51,16 @@ Server chạy tại `http://localhost:3000`:
 
 ### Nếu báo lỗi kết nối (signature/sign)
 
-TikTok đôi khi chặn kết nối trực tiếp. Cách xử lý:
+**Lỗi "requires a Business plan" (Euler Stream):** endpoint ký request của gói free đôi khi bị quá tải/hạn mức. Tool đã **tự thử lại 3 lần** — nếu vẫn lỗi, làm theo thứ tự:
 
-1. Mở **tiktok.com** trên máy tính bằng Chrome/Edge và **đăng nhập** (bất kỳ tài khoản nào)
-2. Bấm **F12** → tab **Application** → **Cookies** → `https://www.tiktok.com`
-3. Copy giá trị cookie **`sessionid`**
-4. Mở file **`config.json`**, dán vào ô `"sessionid"`:
+1. **Đăng ký API key miễn phí** tại [eulerstream.com](https://www.eulerstream.com) → Dashboard → API Keys → Create API key → dán vào ô **"Euler API Key"** ở trang cài đặt → Lưu → kết nối lại. Key free đủ dùng cho 1 livestream (hạn mức theo ngày).
+2. **Thêm sessionid** (giảm tải và tăng ổn định): mở **tiktok.com** trên máy tính, đăng nhập, F12 → Application → Cookies → copy giá trị cookie **`sessionid`** (kèm **`tt-target-idc`** nếu có) → dán vào `config.json`:
    ```json
-   { "sessionid": "dán giá trị vào đây", ... }
+   { "sessionid": "...", "ttTargetIdc": "useast2a", ... }
    ```
-5. Chạy lại `npm start`
+3. Cân nhắc gói trả phí của Euler Stream nếu live thường xuyên/quy mô lớn.
+
+Lỗi **"isn't online"**: người đó chưa lên sóng — chờ họ mở live rồi kết nối lại.
 
 ## 4. Lên sóng TikTok qua OBS
 

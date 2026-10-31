@@ -179,11 +179,11 @@
         Lưu ý: người đó phải đang lên sóng thì tool mới kết nối được.<br><br>
         <b>2. Nếu báo lỗi (signature/sign bị chặn):</b>
         <ol>
-          <li>Mở <b>tiktok.com</b> trên máy tính bằng Chrome/Edge và <b>đăng nhập</b> (tài khoản nào cũng được)</li>
-          <li>Bấm <span class="k">F12</span> → tab <b>Application</b> → <b>Cookies</b> → chọn <span class="k">https://www.tiktok.com</span></li>
-          <li>Tìm cookie <span class="k">sessionid</span> → copy nguyên chuỗi giá trị</li>
-          <li>Dán vào ô <b>Sessionid</b> ở phần cài đặt bên dưới → <b>Lưu cài đặt</b> → kết nối lại</li>
+          <li>Lỗi <b>"requires a Business plan"</b> (Euler Stream): thường là quá tải tạm thời của gói free — tool đã <b>tự thử lại 3 lần</b>. Nếu vẫn lỗi:
+            vào <span class="k">eulerstream.com</span> → <b>Sign up</b> tài khoản miễn phí → <b>Dashboard → API Keys → Create API key</b> → copy key (dạng <span class="k">ei_key...</span>) → dán vào ô <b>Euler API Key</b> bên dưới → <b>Lưu cài đặt</b> → kết nối lại. Key free đủ dùng cho 1 livestream.</li>
+          <li>Hoặc: mở <b>tiktok.com</b> trên máy tính, <b>đăng nhập</b>, F12 → <b>Application → Cookies</b> → <span class="k">https://www.tiktok.com</span> → copy cookie <span class="k">sessionid</span> → dán vào ô <b>Sessionid</b> bên dưới → Lưu. (Cookie <span class="k">tt-target-idc</span> đi kèm nếu có thì sửa trong config.json)</li>
         </ol>
+        <b>3. Nếu báo "KHÔNG đang phát trực tiếp":</b> người đó chưa lên sóng — chờ họ mở live rồi bấm Kết nối lại.
       </div>
     </details>
   </div>
@@ -250,6 +250,11 @@
     <label>Sessionid TikTok (dự phòng khi bị chặn — xem hướng dẫn phía trên)</label>
     <input type="text" id="sessionid" placeholder="Dán sessionid tại đây (không bắt buộc)">
     <div class="hint-sm" id="sessionid-note"></div>
+
+    <div style="height:12px"></div>
+    <label>Euler API Key (miễn phí — fix lỗi "requires a Business plan")</label>
+    <input type="text" id="eulerApiKey" placeholder="Dán API key tại đây (không bắt buộc)">
+    <div class="hint-sm" id="euler-note"></div>
   </div>
 
   <!-- ================= DEMO ================= -->
@@ -378,6 +383,14 @@
       $('sessionid').value = '';
       $('sessionid-note').textContent = '';
     }
+    if (cfg.eulerApiKey === '********') {
+      $('eulerApiKey').value = '********';
+      $('eulerApiKey').placeholder = 'Đã lưu — nhập mới để thay thế';
+      $('euler-note').textContent = '✅ Euler API Key đã được lưu. Muốn thay thì dán cái mới vào rồi Lưu.';
+    } else {
+      $('eulerApiKey').value = '';
+      $('euler-note').textContent = '';
+    }
     if (cfg.background !== undefined) $('background').value = cfg.background || '';
     $('maxMonks').value = cfg.maxMonks ?? 20;
     $('v-maxMonks').textContent = cfg.maxMonks ?? 20;
@@ -440,6 +453,7 @@
     const body = {
       username: $('username').value,             // lưu luôn username đang nhập làm mặc định
       sessionid: $('sessionid').value.trim(),
+      eulerApiKey: $('eulerApiKey').value.trim(),
       background: $('background').value,
       maxMonks: Number($('maxMonks').value),
       bubbleSeconds: Number($('bubbleSeconds').value),
