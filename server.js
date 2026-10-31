@@ -264,10 +264,14 @@ function buildLiveOptions() {
   const sid = String(config.sessionid || '').trim();
   if (sid) {
     // có phiên đăng nhập -> dùng WebSocket xác thực (đường ký riêng, bớt phụ thuộc endpoint trả phí)
+    // shape chuẩn v2.5: session.cookie = { type: 'cookie', value: { sessionId, ttTargetIdc } }
     options.session = {
       cookie: {
-        sessionId: sid,
-        ttTargetIdc: String(config.ttTargetIdc || 'useast2a').trim()
+        type: 'cookie',
+        value: {
+          sessionId: sid,
+          ttTargetIdc: String(config.ttTargetIdc || 'useast2a').trim()
+        }
       }
     };
     options.authenticateWs = true;
