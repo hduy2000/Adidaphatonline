@@ -1,0 +1,14 @@
+# Dependencies
+node_modules/
+
+# Cấu hình cá nhân (có thể chứa sessionid — KHÔNG commit)
+config.json
+
+# Generated
+graphify-out/
+
+# Logs & hệ thống
+*.log
+.DS_Store
+Thumbs.db
+.zcode/

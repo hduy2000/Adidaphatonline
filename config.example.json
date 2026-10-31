@@ -1,0 +1,19 @@
+{
+  "port": 3000,
+  "username": "",
+  "sessionid": "",
+  "background": "",
+  "maxMonks": 20,
+  "bubbleSeconds": 5,
+  "walkSpeed": 1,
+  "panelMode": "occasional",
+  "panelEveryMinutes": 3,
+  "panelShowSeconds": 30,
+  "showTotals": true,
+  "leaderboardTitle": "BẢNG VÀNG DÂNG HƯƠNG",
+  "recentTitle": "Người quen đã dâng lại",
+  "demoSpeed": 1,
+  "demoGift": true,
+  "demoLike": true,
+  "demoJoin": true
+}

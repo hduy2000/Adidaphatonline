@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Điều khiển & Cài đặt — Phật Tử Dâng Hương</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: linear-gradient(160deg, #1a0b06, #2c1108 55%, #170804);
+    color: #f5e6c8;
+    font-family: "Segoe UI", system-ui, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 32px 16px 60px;
+  }
+  .wrap { width: 100%; max-width: 780px; }
+  h1 { font-size: 26px; color: #ffd24a; text-align: center; margin-bottom: 4px; }
+  .sub { text-align: center; color: #caa06a; margin-bottom: 22px; font-size: 14px; }
+  .sub a { color: #ffd24a; font-weight: 700; }
+
+  .card {
+    background: rgba(30, 14, 7, 0.78);
+    border: 2px solid rgba(240, 192, 90, 0.55);
+    border-radius: 14px;
+    padding: 18px 20px;
+    margin-bottom: 16px;
+  }
+  .card h2 {
+    font-size: 17px;
+    color: #ffd24a;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  label { display: block; font-size: 13.5px; color: #d9b380; margin-bottom: 6px; }
+  .hint-sm { font-size: 12px; color: #9a7548; margin-top: 4px; line-height: 1.5; }
+
+  input[type=text] {
+    width: 100%;
+    padding: 11px 13px;
+    font-size: 15px;
+    border-radius: 8px;
+    border: 1px solid #7a5220;
+    background: #170a04;
+    color: #ffe9c4;
+    outline: none;
+  }
+  input[type=text]:focus { border-color: #f0c05a; }
+  select.sel {
+    width: 100%;
+    padding: 11px 13px;
+    font-size: 15px;
+    border-radius: 8px;
+    border: 1px solid #7a5220;
+    background: #170a04;
+    color: #ffe9c4;
+    outline: none;
+    cursor: pointer;
+  }
+  select.sel:focus { border-color: #f0c05a; }
+
+  /* slider rows */
+  .set-row { margin-bottom: 14px; }
+  .set-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 4px; }
+  .set-head .val { color: #ffd24a; font-weight: 700; font-size: 14px; }
+  input[type=range] {
+    width: 100%;
+    accent-color: #e0a232;
+    height: 26px;
+    cursor: pointer;
+  }
+
+  /* checkbox row */
+  .checks { display: flex; gap: 18px; flex-wrap: wrap; margin: 4px 0 6px; }
+  .checks label {
+    display: flex; align-items: center; gap: 7px;
+    font-size: 14px; color: #f5e6c8; cursor: pointer; margin: 0;
+  }
+  .checks input { accent-color: #e0a232; width: 17px; height: 17px; cursor: pointer; }
+
+  .row { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; }
+  button {
+    padding: 11px 18px;
+    font-size: 15px;
+    font-weight: 700;
+    border-radius: 8px;
+    border: none;
+    cursor: pointer;
+    color: #fff;
+    transition: filter .15s;
+  }
+  button:hover { filter: brightness(1.15); }
+  button:disabled { opacity: 0.45; cursor: not-allowed; }
+  #btn-start { background: linear-gradient(180deg, #e0483a, #a31f14); flex: 1; min-width: 140px; }
+  #btn-demo  { background: linear-gradient(180deg, #c9862a, #8a5312); }
+  #btn-stop  { background: linear-gradient(180deg, #555, #333); }
+  #btn-save {
+    background: linear-gradient(180deg, #2f9e57, #1d6b3a);
+    width: 100%;
+    font-size: 16px;
+    padding: 13px;
+  }
+
+  .status {
+    display: flex; align-items: center; gap: 10px;
+    font-size: 14px; padding: 10px 12px;
+    background: #170a04; border-radius: 8px; border: 1px solid #4a2c10;
+  }
+  .dot { width: 12px; height: 12px; border-radius: 50%; background: #777; flex-shrink: 0; }
+  .dot.on { background: #4cd964; box-shadow: 0 0 10px #4cd964; }
+  .dot.demo { background: #f0a232; box-shadow: 0 0 10px #f0a232; }
+
+  #save-toast {
+    display: none;
+    margin-top: 12px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    background: rgba(47,158,87,0.18);
+    border: 1px solid #2f9e57;
+    color: #8fe6ae;
+    font-size: 14px;
+    text-align: center;
+  }
+  #save-toast.err { background: rgba(224,72,58,0.15); border-color: #e0483a; color: #ff9d90; }
+
+  #log {
+    margin-top: 12px;
+    height: 200px;
+    overflow-y: auto;
+    background: #120702;
+    border: 1px solid #4a2c10;
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 13px;
+    line-height: 1.55;
+  }
+  #log .c { color: #ffe9c4; }
+  #log .g { color: #ffb1c1; }
+  #log .s { color: #8fd694; }
+
+  details { margin-top: 10px; }
+  summary {
+    cursor: pointer; font-size: 14px; color: #ffd24a; font-weight: 700;
+    padding: 8px 0; user-select: none;
+  }
+  .guide { font-size: 13.5px; color: #d9b380; line-height: 1.7; }
+  .guide b { color: #ffe9c4; }
+  .guide ol { padding-left: 22px; margin: 6px 0; }
+  .guide .k { color: #ffd24a; background: #170a04; padding: 1px 6px; border-radius: 4px; font-family: Consolas, monospace; font-size: 12.5px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>🙏 Phật Tử Dâng Hương — TikTok Live</h1>
+  <p class="sub">Nhận comment realtime từ livestream TikTok → phật tử ngồi bồ đoàn dâng hương · <a href="/" target="_blank">Mở trang cảnh ↗</a></p>
+
+  <!-- ================= KẾT NỐI ================= -->
+  <div class="card">
+    <h2>🔴 Kết nối livestream TikTok</h2>
+    <label>Username TikTok của người đang phát trực tiếp (không cần @, ví dụ: <b>tranvana.xxx</b>)</label>
+    <input type="text" id="username" placeholder="Nhập username rồi bấm Kết nối...">
+    <div class="row">
+      <button id="btn-start">▶ Kết nối livestream</button>
+      <button id="btn-demo">🧪 Chạy DEMO</button>
+      <button id="btn-stop">■ Dừng</button>
+    </div>
+    <div style="margin-top:12px" class="status">
+      <span class="dot" id="dot"></span>
+      <span id="status-text">Đang kết nối tới server...</span>
+    </div>
+    <details>
+      <summary>📖 Username lấy ở đâu? Lỗi kết nối phải làm sao?</summary>
+      <div class="guide">
+        <b>1. Username là gì?</b> Là tên tài khoản TikTok của người <b>đang phát trực tiếp</b> (đang LIVE).
+        Mở app TikTok → vào hồ sơ người đó → dòng <span class="k">@username</span> dưới tên.
+        Lưu ý: người đó phải đang lên sóng thì tool mới kết nối được.<br><br>
+        <b>2. Nếu báo lỗi (signature/sign bị chặn):</b>
+        <ol>
+          <li>Mở <b>tiktok.com</b> trên máy tính bằng Chrome/Edge và <b>đăng nhập</b> (tài khoản nào cũng được)</li>
+          <li>Bấm <span class="k">F12</span> → tab <b>Application</b> → <b>Cookies</b> → chọn <span class="k">https://www.tiktok.com</span></li>
+          <li>Tìm cookie <span class="k">sessionid</span> → copy nguyên chuỗi giá trị</li>
+          <li>Dán vào ô <b>Sessionid</b> ở phần cài đặt bên dưới → <b>Lưu cài đặt</b> → kết nối lại</li>
+        </ol>
+      </div>
+    </details>
+  </div>
+
+  <!-- ================= CÀI ĐẶT CẢNH ================= -->
+  <div class="card">
+    <h2>⚙️ Cài đặt cảnh (lưu tự động, áp dụng ngay)</h2>
+
+    <div class="set-row">
+      <div class="set-head"><label style="margin:0">Số phật tử / bồ đoàn tối đa</label><span class="val" id="v-maxMonks">20</span></div>
+      <input type="range" id="maxMonks" min="5" max="20" step="1" value="20">
+      <div class="hint-sm">Càng nhiều càng đông — quá 20 thì người dư xếp hàng chờ chỗ trống.</div>
+    </div>
+
+    <div class="set-row">
+      <div class="set-head"><label style="margin:0">Thời gian hiện bình luận trên bong bóng</label><span class="val" id="v-bubbleSeconds">5s</span></div>
+      <input type="range" id="bubbleSeconds" min="2" max="15" step="1" value="5">
+    </div>
+
+    <div class="set-row">
+      <div class="set-head"><label style="margin:0">Tốc độ đi của phật tử</label><span class="val" id="v-walkSpeed">x1.0</span></div>
+      <input type="range" id="walkSpeed" min="0.5" max="2" step="0.1" value="1">
+    </div>
+
+    <div class="set-row">
+      <label>Ảnh nền</label>
+      <select id="background" class="sel">
+        <option value="">— Cảnh vẽ mặc định (code) —</option>
+      </select>
+      <div class="hint-sm">Chọn ảnh từ thư mục <span class="k">public/image/</span> — copy ảnh chùa dọc 9:16 của bạn vào đó rồi tải lại trang này.</div>
+    </div>
+
+    <div class="set-row">
+      <label>Hiển thị 2 bảng (bảng vàng + người quen đã dâng)</label>
+      <select id="panelMode" class="sel">
+        <option value="always">Luôn hiện</option>
+        <option value="occasional" selected>Thỉnh thoảng hiện (khuyến nghị)</option>
+        <option value="hidden">Ẩn hẳn</option>
+      </select>
+    </div>
+    <div class="set-row">
+      <div class="set-head"><label style="margin:0">Mỗi ... phút hiện bảng 1 lần</label><span class="val" id="v-panelEveryMinutes">3 phút</span></div>
+      <input type="range" id="panelEveryMinutes" min="1" max="30" step="1" value="3">
+      <div class="set-head" style="margin-top:6px"><label style="margin:0">Mỗi lần hiện giữ ... giây</label><span class="val" id="v-panelShowSeconds">30s</span></div>
+      <input type="range" id="panelShowSeconds" min="10" max="120" step="5" value="30">
+    </div>
+
+    <div class="set-row">
+      <label>Mục khác</label>
+      <div class="checks">
+        <label><input type="checkbox" id="showTotals" checked> 🌹 Tổng hoa (góc dưới)</label>
+      </div>
+    </div>
+
+    <div class="set-row">
+      <label>Tiêu đề bảng vàng</label>
+      <input type="text" id="leaderboardTitle" maxlength="60" placeholder="BẢNG VÀNG DÂNG HƯƠNG">
+    </div>
+    <div class="set-row">
+      <label>Tiêu đề panel người quen</label>
+      <input type="text" id="recentTitle" maxlength="60" placeholder="Người quen đã dâng lại">
+    </div>
+
+    <label>Sessionid TikTok (dự phòng khi bị chặn — xem hướng dẫn phía trên)</label>
+    <input type="text" id="sessionid" placeholder="Dán sessionid tại đây (không bắt buộc)">
+    <div class="hint-sm" id="sessionid-note"></div>
+  </div>
+
+  <!-- ================= DEMO ================= -->
+  <div class="card">
+    <h2>🧪 Chế độ demo (chạy thử không cần live thật)</h2>
+    <div class="set-row">
+      <div class="set-head"><label style="margin:0">Tốc độ demo (nhanh/chậm)</label><span class="val" id="v-demoSpeed">x1.0</span></div>
+      <input type="range" id="demoSpeed" min="0.5" max="3" step="0.1" value="1">
+      <div class="hint-sm">Đang bật demo mà lưu cài đặt này → demo tự chạy lại với tốc độ mới.</div>
+    </div>
+    <div class="set-row">
+      <label>Sự kiện giả lập</label>
+      <div class="checks">
+        <label><input type="checkbox" id="demoGift" checked> 🌹 Gift hoa hồng</label>
+        <label><input type="checkbox" id="demoLike" checked> ❤️ Like</label>
+        <label><input type="checkbox" id="demoJoin" checked> ✨ Vào phòng / theo dõi</label>
+      </div>
+    </div>
+  </div>
+
+  <button id="btn-save">💾 LƯU CÀI ĐẶT</button>
+  <div id="save-toast"></div>
+
+  <!-- ================= LOG ================= -->
+  <div class="card" style="margin-top:16px">
+    <h2>📜 Sự kiện trực tiếp</h2>
+    <div id="log"></div>
+  </div>
+
+  <!-- ================= HƯỚNG DẪN OBS ================= -->
+  <div class="card">
+    <h2>🖥️ Lên sóng TikTok qua OBS</h2>
+    <div class="guide">
+      <ol>
+        <li>Trong <b>OBS Studio</b> thêm nguồn <b>Browser</b>: URL <span class="k">http://localhost:3000/</span>, kích thước <b>1080 × 1920</b> (dọc 9:16)</li>
+        <li>Nhập username ở trên → bấm <b>Kết nối livestream</b></li>
+        <li>Bấm <b>Start Streaming</b>, chọn dịch vụ <b>TikTok Live</b> (hoặc dùng TikTok Live Studio)</li>
+      </ol>
+      Cấu hình cũng lưu vào file <span class="k">config.json</span> — giữ nguyên sau khi khởi động lại.
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  let ws = null;
+
+  /* ---------------- trạng thái + log ---------------- */
+  function setStatus(kind, text) {
+    $('dot').className = 'dot ' + (kind === 'on' ? 'on' : kind === 'demo' ? 'demo' : '');
+    $('status-text').textContent = text;
+  }
+  function esc(s) {
+    return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+  function log(html) {
+    const el = $('log');
+    const div = document.createElement('div');
+    div.innerHTML = html;
+    el.prepend(div);
+    while (el.children.length > 40) el.removeChild(el.lastChild);
+  }
+
+  function wsConnect() {
+    const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+    ws = new WebSocket(`${proto}://${location.host}/ws`);
+    ws.onopen = () => setStatus('idle', 'Server sẵn sàng. Chưa chạy livestream.');
+    ws.onclose = () => {
+      setStatus('off', 'Mất kết nối server — đang thử lại...');
+      setTimeout(wsConnect, 1500);
+    };
+    ws.onerror = () => ws.close();
+    ws.onmessage = (ev) => {
+      let msg;
+      try { msg = JSON.parse(ev.data); } catch { return; }
+      if (msg.t === 'status') {
+        if (msg.mode === 'live') setStatus('on', `🟢 LIVE: @${msg.username}${msg.viewers ? ' — ' + msg.viewers + ' người xem' : ''}${msg.msg ? ' — ' + msg.msg : ''}`);
+        else if (msg.mode === 'demo') setStatus('demo', `🧪 DEMO đang chạy${msg.msg ? ' — ' + msg.msg : ''}`);
+        else setStatus('idle', msg.msg || 'Server sẵn sàng.');
+        return;
+      }
+      if (msg.t === 'hello' || msg.t === 'config') return;
+
+      if (msg.t === 'comment') log(`<span class="c">💬 ${esc(msg.user.nick)}: ${esc(msg.text)}</span>`);
+      else if (msg.t === 'gift') log(`<span class="g">🌹 ${esc(msg.user.nick)} tặng ${msg.count} ${esc(msg.name || 'Rose')}</span>`);
+      else if (msg.t === 'like') log(`<span class="c">❤️ ${esc(msg.user.nick)} thả ${msg.count} tim</span>`);
+      else if (msg.t === 'join') log(`<span class="s">✨ ${esc(msg.user.nick)} đã vào phòng</span>`);
+      else if (msg.t === 'follow') log(`<span class="s">💖 ${esc(msg.user.nick)} vừa theo dõi</span>`);
+    };
+  }
+  function send(obj) { if (ws && ws.readyState === 1) ws.send(JSON.stringify(obj)); }
+
+  $('btn-start').onclick = () => {
+    const u = $('username').value.trim();
+    if (!u) { setStatus('idle', '⚠️ Nhập username TikTok trước đã!'); return; }
+    setStatus('idle', 'Đang kết nối tới @' + u.replace(/^@/, '') + ' ...');
+    send({ cmd: 'start', username: u });
+  };
+  $('btn-demo').onclick = () => send({ cmd: 'demo' });
+  $('btn-stop').onclick = () => send({ cmd: 'stop' });
+  $('username').addEventListener('keydown', e => { if (e.key === 'Enter') $('btn-start').click(); });
+
+  /* ---------------- cài đặt ---------------- */
+  const sliders = [
+    ['maxMonks', 'v-maxMonks', (v) => v],
+    ['bubbleSeconds', 'v-bubbleSeconds', (v) => v + 's'],
+    ['walkSpeed', 'v-walkSpeed', (v) => 'x' + Number(v).toFixed(1)],
+    ['panelEveryMinutes', 'v-panelEveryMinutes', (v) => v + ' phút'],
+    ['panelShowSeconds', 'v-panelShowSeconds', (v) => v + 's'],
+    ['demoSpeed', 'v-demoSpeed', (v) => 'x' + Number(v).toFixed(1)]
+  ];
+  for (const [id, labelId, fmt] of sliders) {
+    $(id).addEventListener('input', () => { $(labelId).textContent = fmt($(id).value); });
+  }
+
+  function fillForm(cfg) {
+    if (!cfg) return;
+    $('username').value = cfg.username || '';
+    $('username').placeholder = cfg.username ? '' : 'Nhập username rồi bấm Kết nối...';
+    if (cfg.sessionid === '********') {
+      $('sessionid').value = '********';
+      $('sessionid').placeholder = 'Đã lưu — nhập mới để thay thế';
+      $('sessionid-note').textContent = '✅ Sessionid đã được lưu. Muốn thay thì dán cái mới vào rồi Lưu.';
+    } else {
+      $('sessionid').value = '';
+      $('sessionid-note').textContent = '';
+    }
+    if (cfg.background !== undefined) $('background').value = cfg.background || '';
+    $('maxMonks').value = cfg.maxMonks ?? 20;
+    $('v-maxMonks').textContent = cfg.maxMonks ?? 20;
+    $('bubbleSeconds').value = cfg.bubbleSeconds ?? 5;
+    $('v-bubbleSeconds').textContent = (cfg.bubbleSeconds ?? 5) + 's';
+    $('walkSpeed').value = cfg.walkSpeed ?? 1;
+    $('v-walkSpeed').textContent = 'x' + Number(cfg.walkSpeed ?? 1).toFixed(1);
+    $('demoSpeed').value = cfg.demoSpeed ?? 1;
+    $('v-demoSpeed').textContent = 'x' + Number(cfg.demoSpeed ?? 1).toFixed(1);
+    $('panelMode').value = cfg.panelMode || 'occasional';
+    $('panelEveryMinutes').value = cfg.panelEveryMinutes ?? 3;
+    $('v-panelEveryMinutes').textContent = (cfg.panelEveryMinutes ?? 3) + ' phút';
+    $('panelShowSeconds').value = cfg.panelShowSeconds ?? 30;
+    $('v-panelShowSeconds').textContent = (cfg.panelShowSeconds ?? 30) + 's';
+    $('showTotals').checked = cfg.showTotals !== false;
+    $('demoGift').checked = cfg.demoGift !== false;
+    $('demoLike').checked = cfg.demoLike !== false;
+    $('demoJoin').checked = cfg.demoJoin !== false;
+    $('leaderboardTitle').value = cfg.leaderboardTitle || 'BẢNG VÀNG DÂNG HƯƠNG';
+    $('recentTitle').value = cfg.recentTitle || 'Người quen đã dâng lại';
+  }
+
+  let lastCfg = null;
+  async function loadConfig() {
+    try {
+      lastCfg = await (await fetch('/api/config')).json();
+      fillForm(lastCfg);
+    } catch { /* server chưa lên */ }
+  }
+
+  // nạp danh sách ảnh nền từ public/image/
+  async function loadBackgrounds() {
+    try {
+      const r = await fetch('/api/backgrounds');
+      const files = await r.json();
+      const sel = $('background');
+      sel.querySelectorAll('option:not(:first-child)').forEach(o => o.remove());
+      for (const f of files) {
+        const opt = document.createElement('option');
+        opt.value = f.file;
+        opt.textContent = f.file.length > 28 ? f.file.slice(0, 25) + '…' : f.file;
+        sel.appendChild(opt);
+      }
+      // chọn lại ảnh đang dùng trong config
+      if (lastCfg && lastCfg.background) sel.value = lastCfg.background;
+    } catch { /* bỏ qua */ }
+  }
+
+  function toast(text, isErr) {
+    const el = $('save-toast');
+    el.textContent = text;
+    el.className = isErr ? 'err' : '';
+    el.id = 'save-toast';
+    el.style.display = 'block';
+    clearTimeout(toast._t);
+    toast._t = setTimeout(() => { el.style.display = 'none'; }, 3500);
+  }
+
+  $('btn-save').onclick = async () => {
+    const body = {
+      username: $('username').value,             // lưu luôn username đang nhập làm mặc định
+      sessionid: $('sessionid').value.trim(),
+      background: $('background').value,
+      maxMonks: Number($('maxMonks').value),
+      bubbleSeconds: Number($('bubbleSeconds').value),
+      walkSpeed: Number($('walkSpeed').value),
+      panelMode: $('panelMode').value,
+      panelEveryMinutes: Number($('panelEveryMinutes').value),
+      panelShowSeconds: Number($('panelShowSeconds').value),
+      showTotals: $('showTotals').checked,
+      leaderboardTitle: $('leaderboardTitle').value,
+      recentTitle: $('recentTitle').value,
+      demoSpeed: Number($('demoSpeed').value),
+      demoGift: $('demoGift').checked,
+      demoLike: $('demoLike').checked,
+      demoJoin: $('demoJoin').checked
+    };
+    try {
+      const r = await fetch('/api/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      });
+      const d = await r.json();
+      if (d.ok) {
+        fillForm(d.config);
+        toast('✅ Đã lưu cài đặt — cảnh đang chạy đã được cập nhật ngay.');
+      } else {
+        toast('⚠️ Lỗi: ' + (d.error || 'không lưu được'), true);
+      }
+    } catch (e) {
+      toast('⚠️ Không kết nối được server', true);
+    }
+  };
+
+  loadConfig();
+  loadBackgrounds();
+  wsConnect();
+})();
+</script>
+</body>
+</html>

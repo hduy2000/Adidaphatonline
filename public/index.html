@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Phật Tử Dâng Hương — Cảnh Livestream</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    width: 100%; height: 100%;
+    background: #000;
+    overflow: hidden;
+    font-family: "Segoe UI", system-ui, sans-serif;
+  }
+  #stage {
+    position: absolute;
+    left: 50%; top: 50%;
+    width: 1080px; height: 1920px;
+    transform-origin: center center;
+  }
+  #scene { width: 1080px; height: 1920px; display: block; }
+
+  /* ---------- panel chung (vàng viền, nền tối mờ) ---------- */
+  .panel {
+    position: absolute;
+    background: rgba(28, 12, 6, 0.72);
+    border: 3px solid #f0c05a;
+    border-radius: 16px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.5), inset 0 0 30px rgba(240,180,70,0.08);
+    padding: 14px 16px;
+    backdrop-filter: blur(2px);
+    transition: opacity .6s ease, visibility .6s ease;
+  }
+  .panel.panel-hidden {
+    opacity: 0;
+    visibility: hidden;
+  }
+  .panel-title {
+    font-weight: 800;
+    font-size: 26px;
+    letter-spacing: 1px;
+    color: #ffd24a;
+    text-align: center;
+    text-shadow: 0 2px 6px rgba(0,0,0,0.8);
+    border-bottom: 2px solid rgba(240,192,90,0.55);
+    padding-bottom: 8px;
+    margin-bottom: 10px;
+  }
+
+  /* ---------- bảng vàng dâng hương (phải) ---------- */
+  #leaderboard {
+    right: 18px;
+    top: 1250px;
+    width: 380px;
+  }
+  .rank-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 6px;
+    color: #ffe9c4;
+    font-size: 24px;
+  }
+  .rank-row.first {
+    background: linear-gradient(90deg, rgba(240,180,60,0.25), transparent);
+    border-radius: 10px;
+  }
+  .rank-no {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #ffe9a8, #c9862a);
+    color: #5a3004;
+    font-weight: 800;
+    font-size: 20px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .rank-row img, .rank-row .avatar-letter,
+  .recent-row img, .recent-row .avatar-letter {
+    width: 40px; height: 40px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 2px solid #f0c05a;
+    flex-shrink: 0;
+  }
+  .avatar-letter {
+    background: #6b3a12;
+    color: #ffd24a;
+    font-weight: 800;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .rank-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rank-roses { color: #ffb1c1; font-weight: 700; font-size: 22px; }
+
+  /* ---------- người quen đã dâng lại (trái dưới) ---------- */
+  #recent {
+    left: 18px;
+    top: 1560px;
+    width: 400px;
+  }
+  .recent-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 4px;
+    color: #fff3dd;
+    font-size: 23px;
+  }
+  .recent-name { font-weight: 600; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .recent-count { color: #ffd24a; font-size: 20px; }
+
+  /* ---------- tổng hoa/coin (góc dưới phải) ---------- */
+  #totals {
+    position: absolute;
+    right: 18px;
+    top: 1800px;
+    background: linear-gradient(90deg, rgba(60,20,8,0.85), rgba(28,12,6,0.85));
+    border: 3px solid #f0c05a;
+    border-radius: 999px;
+    padding: 12px 26px;
+    color: #ffe9c4;
+    font-size: 24px;
+  }
+  #totals b { color: #ffd24a; font-size: 26px; }
+</style>
+</head>
+<body>
+  <div id="stage">
+    <canvas id="scene"></canvas>
+
+    <div id="leaderboard" class="panel">
+      <div class="panel-title">BẢNG VÀNG DÂNG HƯƠNG</div>
+      <div id="leaderboard-body"></div>
+    </div>
+
+    <div id="recent" class="panel">
+      <div class="panel-title">Người quen đã dâng lại</div>
+      <div id="recent-body"></div>
+    </div>
+
+    <div id="totals">🌹 <b>0</b> hoa · <b>0</b> phật tử đã dâng hương</div>
+  </div>
+
+  <script src="js/scene.js"></script>
+  <script src="js/effects.js"></script>
+  <script src="js/monk.js"></script>
+  <script src="js/panels.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

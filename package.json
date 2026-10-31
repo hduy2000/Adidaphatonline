@@ -1,0 +1,18 @@
+{
+  "name": "tiktok-phat-tu-dang-huong",
+  "version": "1.0.0",
+  "description": "Tool livestream TikTok realtime: comment -> phat tu di dang huong + lap lai cau comment",
+  "main": "server.js",
+  "type": "module",
+  "scripts": {
+    "start": "node server.js",
+    "demo": "node server.js --demo"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "tiktok-live-connector": "^2.0.2",
+    "ws": "^8.18.0"
+  }
+}
