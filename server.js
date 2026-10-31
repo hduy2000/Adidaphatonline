@@ -333,7 +333,8 @@ async function startLive(username) {
   if (!uniqueId) throw new Error('Chưa nhập username TikTok');
 
   currentUsername = uniqueId;
-  mode = 'live';
+  // Lưu ý: mode chỉ chuyển thành 'live' SAU khi kết nối thành công,
+  // tránh hiển thị nhầm 🟢 LIVE trong lúc đang retry
   const options = buildLiveOptions();
 
   // Lỗi ký request của Euler Stream thường là quá tải tạm thời ở gói free -> tự thử lại
@@ -347,6 +348,7 @@ async function startLive(username) {
     try {
       console.log(`[tiktok] Đang kết nối tới @${uniqueId} (lần ${attempt}/5)...`);
       await conn.connect();
+      mode = 'live';
       lastViewers = 0;
       console.log(`[tiktok] Đã kết nối tới @${uniqueId}`);
       sendStatus(`Đã kết nối tới @${uniqueId}`);
@@ -372,11 +374,11 @@ async function startLive(username) {
 
   let friendly = 'Không kết nối được livestream: ' + raw;
   if (lastErr && /business plan/i.test(raw)) {
-    friendly = 'Lỗi Euler Stream (endpoint ký request bị giới hạn ở gói free). Cách xử lý theo thứ tự: '
-      + '(1) Đăng ký API key MIỄN PHÍ tại eulerstream.com → Dashboard → API Keys → Create API key, dán vào ô "Euler API Key" ở trang cài đặt, bấm Lưu rồi kết nối lại — đây là cách fix hiệu quả nhất, key free đủ dùng cho 1 livestream. '
-      + '(2) Thêm sessionid TikTok vào cài đặt (F12 → Cookies trên tiktok.com) — sẽ chuyển sang WebSocket xác thực, ít phụ thuộc endpoint quá tải. '
-      + '(3) Bấm Kết nối lại nhiều lần — lỗi có lúc qua lúc không. '
-      + '(4) Live thường xuyên/quy mô lớn thì cần gói trả phí của Euler Stream.';
+    friendly = 'Lỗi Euler Stream (endpoint ký request bị giới hạn). Cách xử lý theo thứ tự: '
+      + '(1) KIỂM TRA LẠI Euler API Key — key phải copy từ Dashboard eulerstream.com → API Keys (key sai sẽ bị từ chối im lặng và vẫn báo lỗi này). '
+      + '(2) Thêm sessionid TikTok vào cài đặt (F12 → Cookies trên tiktok.com → copy sessionid) — chuyển sang WebSocket xác thực. '
+      + '(3) Bấm Kết nối lại nhiều lần. '
+      + '(4) Live thường xuyên thì cần gói trả phí của Euler Stream.';
   } else if (lastErr && /isn't online|not.*live/i.test(raw)) {
     friendly = 'Người này hiện KHÔNG đang phát trực tiếp. Hãy chờ họ lên sóng rồi bấm Kết nối lại.';
   } else if (lastErr && /status code 403/i.test(raw)) {
